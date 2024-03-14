@@ -1,7 +1,10 @@
 import torch
+import torch.optim as optim
 from torchvision import transforms, datasets
 from torch.autograd import Variable
 from architecture import AllConvNet
+import wandb
+
 class NormalizeNegativeImages(object):
 
     def __call__(self, item):
@@ -11,7 +14,7 @@ class NormalizeNegativeImages(object):
             item /= torch.max(item)
         return item
     
-def Transform_image(dataset_path):
+def Transform_image(dataset_path, transformation):
     # Semilla para estandarizar resultados
     torch.manual_seed(2320)
 
@@ -38,14 +41,6 @@ def Transform_image(dataset_path):
 
     #  transformaciones a 8x8 y de vuelta a 32x32 por bilineal
 
-    transform_test8x8 = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize(train_mean, train_std),
-        NormalizeNegativeImages(),
-        transforms.Resize((8,8)),
-        transforms.Resize((32,32)),
-    ])
-
     transform_train8x8 = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(train_mean, train_std),
@@ -54,6 +49,14 @@ def Transform_image(dataset_path):
         transforms.Resize((32,32)),
         transforms.RandomCrop(32, padding=4),
         transforms.RandomHorizontalFlip()
+    ])
+
+    transform_test8x8 = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(train_mean, train_std),
+        NormalizeNegativeImages(),
+        transforms.Resize((8,8)),
+        transforms.Resize((32,32)),
     ])
 
     # Crearemos transformaciones sin randomizar nada para la resta de imágenes.
@@ -71,9 +74,23 @@ def Transform_image(dataset_path):
         transforms.Resize((8,8)),
         transforms.Resize((32,32))
     ])
+    if transformation == "normal":
+        return transform_train, transform_test
+    
+    elif transformation == "8x8":
+        return transform_train8x8, transform_test8x8
+
+    elif transformation == "normal_no_random":
+        return transform_train_no_random, transform_test
 
     return transform_train, transform_test, transform_train8x8, transform_test8x8, transform_train_no_random, transform_train8x8_no_random
 
+
+def load_model(model):
+    if model == 'AllConvNet':
+        return AllConvNet(3)
+    else:
+        raise ValueError('Model not found')
 
 
 def load_data(dataset_path, train_batch_size, test_batch_size, transform_train, transform_test):
@@ -87,7 +104,6 @@ def load_data(dataset_path, train_batch_size, test_batch_size, transform_train, 
         transform=transform_train),
         batch_size=train_batch_size, shuffle=True, **kwargs)
 
-
     test_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10(root=dataset_path, train=False, download=True,
         transform=transform_test),
@@ -99,8 +115,31 @@ def load_data(dataset_path, train_batch_size, test_batch_size, transform_train, 
 
 
 
+def initialize_model(model):
+
+    '''
+    Initialize a simple AllConvNet(3) and returns the model and all the
+    needed information to train it.
+    '''
+
+    global cuda
+    global criterion
+
+    model = load_model(model)
+
+    if cuda:
+        model.cuda()
+
+    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    scheduler = optim.lr_scheduler.MultiStepLR(
+                optimizer, milestones=[200, 250, 300],
+                gamma=0.1)
+
+    return model, optimizer, criterion, scheduler
+
+
 def train(epoch: int, loader: torch.utils.data.DataLoader,
-          model: AllConvNet, optimizer):
+          model, optimizer):
 
     global criterion
     global cuda
@@ -121,10 +160,12 @@ def train(epoch: int, loader: torch.utils.data.DataLoader,
           print('Train epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
               epoch, batch_idx * len(data), len(loader.dataset),
               100. * batch_idx / len(loader), loss.item()))
+          
+          wandb.log({"loss": loss.item()})
 
 
 def test(epoch: int, best_loss: int, best_epoch: int,
-         test_loader: torch.utils.data.DataLoader, model: AllConvNet,
+         test_loader: torch.utils.data.DataLoader, model,
          test_name=''):
 
     global criterion
@@ -145,6 +186,7 @@ def test(epoch: int, best_loss: int, best_epoch: int,
         pred = output.data.max(1, keepdim=True)[1]
         correct += pred.eq(target.data.view_as(pred)).long().cpu().sum()
         acc = 100 * correct / len(test_loader.dataset)
+        wandb.log({"acc": acc, "loss": test_loss})
 
     test_loss /= len(test_loader.dataset)
 

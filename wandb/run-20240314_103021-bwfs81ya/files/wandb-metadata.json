@@ -1,0 +1,37 @@
+{
+    "os": "macOS-14.2.1-arm64-arm-64bit",
+    "python": "3.10.10",
+    "heartbeatAt": "2024-03-14T13:30:22.645640",
+    "startedAt": "2024-03-14T13:30:21.842747",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/Users/veser/University/2024/DNN_neuroscience/test.py",
+    "codePathLocal": "test.py",
+    "codePath": "test.py",
+    "git": {
+        "remote": "https://github.com/Larraguibel/DNN_neuroscience.git",
+        "commit": "fada382e96d2d97734ee667dd67ee9fa6305a87c"
+    },
+    "email": "breguelsebastian@gmail.com",
+    "root": "/Users/veser/University/2024/DNN_neuroscience",
+    "host": "200-152-196-eduroam-al.wlan.net.uc.cl",
+    "username": "veser",
+    "executable": "/Users/veser/miniconda3/bin/python3",
+    "cpu_count": 8,
+    "cpu_count_logical": 8,
+    "disk": {
+        "/": {
+            "total": 460.4317207336426,
+            "used": 9.430801391601562
+        }
+    },
+    "gpuapple": {
+        "type": "arm",
+        "vendor": "Apple"
+    },
+    "memory": {
+        "total": 16.0
+    }
+}
