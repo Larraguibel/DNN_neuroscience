@@ -17,7 +17,7 @@ Hay tres archivos ipynb por el momento.
 * High_frec_achille.ipynb: Imita lo realizado en el experimento de Critical Learning Periods, pero en vez de utilizar una versión borrosa de CIFAR100, se generan imágenes de alta frecuencia a partir de 
 
 ### Clases:
-NormalizeNegativeImages:
+**NormalizeNegativeImages:**
     Utilizada para garantizar que solo haya valores positivos de pixeles de imagenes y que se encuentren en el rango [0, 1].
 
 ### Transformaciones
