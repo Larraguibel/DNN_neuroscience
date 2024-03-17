@@ -8,4 +8,4 @@
 ## Explicación de código
 
 ### Clases comunes a todos los colabs:
-    * NormalizeNegativeImages:
+* NormalizeNegativeImages:
